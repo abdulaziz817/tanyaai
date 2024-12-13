@@ -1,39 +1,59 @@
-import gradio as gr
-import os
-from langchain.chains import ConversationChain
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain_groq import ChatGroq
-from dotenv import load_dotenv
+# Import library yang dibutuhkan
+import gradio as gr  # Gradio untuk antarmuka web
+import os  # Mengakses variabel lingkungan
+from langchain.chains import ConversationChain  # Untuk membuat rantai percakapan
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory  # Memori percakapan
+from langchain_groq import ChatGroq  # Model LLM "GROQ" untuk percakapan
+from dotenv import load_dotenv  # Untuk memuat variabel lingkungan dari file .env
 
 
-# Loading environment variables from .env file
-load_dotenv()
+# Memuat variabel lingkungan dari file .env
+load_dotenv()  # Membaca file .env yang menyimpan variabel sensitif seperti kunci API
 
-# Function to initialize conversation chain with GROQ language model
+# Mengambil kunci API GROQ dari variabel lingkungan
 groq_api_key = os.environ['GROQ_API_KEY']
 
+
+# Fungsi untuk inisialisasi percakapan menggunakan model LLM GROQ
 def initialize_conversation():
-    # Initializing conversation memory
+    # Inisialisasi memori percakapan agar chatbot bisa "mengingat" konteks dialog sebelumnya
     memory = ConversationBufferWindowMemory()
-     # Initializing GROQ chat with provided API key, model name, and settings
-    groq_chat = ChatGroq(groq_api_key=groq_api_key, model_name="llama3-8b-8192",
-                         temperature=1,)
-    # Creating and returning conversation chain with GROQ chat and memory
+
+    # Membuat objek ChatGroq dengan API key, model, dan pengaturan
+    groq_chat = ChatGroq(
+        groq_api_key=groq_api_key,  # Menggunakan kunci API untuk autentikasi
+        model_name="llama3-8b-8192",  # Nama model yang digunakan
+        temperature=1  # Kreativitas respons (semakin tinggi, semakin kreatif/jelas jawabannya)
+    )
+
+    # Mengembalikan objek ConversationChain yang menggabungkan model dan memori
     return ConversationChain(llm=groq_chat, memory=memory)
 
-# Initializing conversation chain
+
+# Membuat objek conversation untuk mengelola alur percakapan
 conversation = initialize_conversation()
 
-# Function to handle chatbot response
+
+# Fungsi untuk menangani pertanyaan dari pengguna
 def chatbot(user_question):
     try:
+        # Mengirim pertanyaan ke model dan mendapatkan respons
         response = conversation(user_question)
+        # Mengembalikan respons yang dihasilkan oleh model
         return response['response']
-    except Exception as e:
+    except Exception as e:  # Jika ada error
+        # Mengembalikan pesan error agar mudah dilihat
         return f"Terjadi error: {e}"
 
 
-# Creating Gradio interface with chatbot function as backend
-iface = gr.Interface(fn=chatbot, inputs="textbox", outputs="textbox", title="Groq Chat App", description="Ask a question and get a response.")
-# Launching the interface
+# Membuat antarmuka dengan Gradio
+iface = gr.Interface(
+    fn=chatbot,  # Fungsi backend yang dipanggil ketika pengguna mengirim pertanyaan
+    inputs="textbox",  # Input berupa kotak teks
+    outputs="textbox",  # Output berupa kotak teks
+    title="Groq Chat App",  # Judul aplikasi
+    description="Ask a question and get a response."  # Deskripsi aplikasi
+)
+
+# Menjalankan aplikasi sehingga dapat diakses melalui browser
 iface.launch()
